@@ -7,18 +7,21 @@ using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    class Bot
+    public class Bot
     {
-        private readonly string iogrGuildName = "patbtest";
         private readonly string commandListeningChannelName = "general";
+        private readonly string announcementChannelName = "general";
         private readonly string iogrHighScoresChannelName = "highscores";
         private readonly string highscoreFilename = "highscores.txt";
 
         private readonly DiscordSocketClient client;
+        private readonly Scheduler scheduler;
         private HighScore currentScore;
+        private ITextChannel announcementChannel;
         private ITextChannel commandListeningChannel;
         private ITextChannel highScoresChannel;
         private bool keepAlive = true;
+        private bool ready = false;
         private IOGRFetcher iogrFetcher;
         private const string helpText =
 
@@ -28,9 +31,11 @@ namespace IOGRBot
     !newseed: new IOGR permalink
     !sleep: (admin only) terminates my program execution";
 
-        public Bot()
+        public Bot(Scheduler scheduler)
         {
             iogrFetcher = new IOGRFetcher();
+            this.scheduler = scheduler;
+
             client = new DiscordSocketClient();
 
             client.Log += LogAsync;
@@ -41,23 +46,41 @@ namespace IOGRBot
 
         private async Task LoggedOutAsync()
         {
-            await currentScore?.SaveToFileAsync(highscoreFilename);
+            ready = false;
+            if (currentScore != null)
+            {
+                await currentScore.SaveToFileAsync(highscoreFilename);
+            }
         }
 
         public async Task MainAsync()
         {
-            // Don't source control secrets
-            await client.LoginAsync(TokenType.Bot, "xxx");
-            await client.StartAsync();
+
+            if (await scheduler.TryInitWithSchedule(this, @"0 0 12 ? * FRI *"))
+            {
+                await scheduler.Start();
+            }
+            
             await InitHighScore();
+            await client.LoginAsync(TokenType.Bot, "NzgwOTM5OTYyMDc3MDIwMTYy.X72ZBA.httAcL2rm90qTB4vfJGkKuk7qoI");
+            await client.StartAsync();
             
             while (keepAlive)
             {
                 await Task.Delay(10000);
             }
 
+            await scheduler.Shutdown();
             await client.StopAsync();
             await client.LogoutAsync();
+        }
+
+        public async Task PostAnnouncement(string message)
+        {
+            if (ready)
+            {
+                await announcementChannel.SendMessageAsync(message);
+            }
         }
 
         private async Task InitHighScore()
@@ -93,8 +116,13 @@ namespace IOGRBot
                     {
                         commandListeningChannel = t;
                     }
+                    if (t.Name == announcementChannelName)
+                    {
+                        announcementChannel = t;
+                    }
                 }
             }
+            ready = true;
             return Task.CompletedTask;
         }
 
