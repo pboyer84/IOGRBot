@@ -20,6 +20,7 @@ namespace IOGRBot
         private ITextChannel announcementChannel;
         private ITextChannel commandListeningChannel;
         private ITextChannel highScoresChannel;
+        private bool keepAlive = true;
         private bool ready = false;
         private IOGRFetcher iogrFetcher;
         private const string helpText =
@@ -52,26 +53,31 @@ namespace IOGRBot
             }
         }
 
-        public async Task StartAsync(string loginToken)
+        public async Task MainAsync(bool isCancellationRequest)
         {
+            if (isCancellationRequest)
+            {
+                return;
+            }
+
             if (await scheduler.TryInitWithSchedule(this, @"0 0 12 ? * FRI *"))
             {
                 await scheduler.Start();
             }
-
+            
             await InitHighScore();
-            await client.LoginAsync(TokenType.Bot, loginToken);
+            await client.LoginAsync(TokenType.Bot, "NzgwOTM5OTYyMDc3MDIwMTYy.X72ZBA.httAcL2rm90qTB4vfJGkKuk7qoI");
             await client.StartAsync();
-        }
+            
+            while (keepAlive)
+            {
+                await Task.Delay(10000);
+            }
 
-        public async Task ShutdownAsync()
-        {
             await scheduler.Shutdown();
             await client.StopAsync();
             await client.LogoutAsync();
         }
-
-        
 
         public async Task PostAnnouncement(string message)
         {
@@ -143,6 +149,7 @@ namespace IOGRBot
                 if (message.Author.Username == "Inno" && message.Content == "!sleep")
             {
                 await message.Channel.SendMessageAsync("Goodnight!");
+                keepAlive = false;
                 return;
             }
 

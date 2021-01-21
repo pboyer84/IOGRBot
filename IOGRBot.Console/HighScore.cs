@@ -9,6 +9,7 @@ namespace IOGRBot
 {
     public class HighScore
     {
+        
         private IDictionary<string, string> EditableTimesByPerson;
         private char ScoreLineSeparator;
         private char TimePartsSeparator;
@@ -62,7 +63,9 @@ namespace IOGRBot
             {
                 EditableTimesByPerson[username] = time;
                 return HighScoreAddResult.Ok;
-            }   
+            }
+
+            
         }
 
         public void Reset()
