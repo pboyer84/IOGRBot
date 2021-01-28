@@ -79,6 +79,7 @@ namespace IOGRBot
                 throw new ArgumentException($"Missing configuration value: {nameof(config.RecurringSeedCronSchedule)}. Cannot start application.");
             }
 
+            adminUsername = config.AdminUsername;
             announcementChannelName = config.AnnouncementChannel;
             commandListeningChannelName = config.CommandListeningChannel;
             iogrHighScoresChannelName = config.HighScoreChannel;
