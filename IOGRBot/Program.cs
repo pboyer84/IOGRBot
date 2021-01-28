@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -18,7 +19,15 @@ namespace IOGRBot
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
+                    IConfiguration configuration = hostContext.Configuration;
+                    var botConfig = configuration.GetSection("DiscordBot").Get<BotConfiguration>();
+                    services.AddSingleton<IScheduler, Scheduler>();
+                    services.AddSingleton<IBot, Bot>();
+                    services.AddSingleton(botConfig);
+
+                    
                     services.AddHostedService<Worker>();
+                    
                 });
     }
 }

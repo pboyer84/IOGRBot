@@ -1,18 +1,17 @@
 ﻿using Quartz;
 using Quartz.Impl;
 using Quartz.Logging;
-using System;
 using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    public class Scheduler
+    public class Scheduler : IScheduler
     {
-        public static Bot Owner { get; private set; }
-        
-        private IScheduler scheduler;
+        public static IBot Owner { get; private set; }
 
-        public async Task<bool> TryInitWithSchedule(Bot owner, string cronExpression)
+        private Quartz.IScheduler scheduler;
+
+        public async Task<bool> TryInitWithSchedule(IBot owner, string cronExpression)
         {
             Owner = owner;
             LogProvider.SetCurrentLogProvider(new ConsoleLogProvider());
@@ -22,7 +21,7 @@ namespace IOGRBot
             return ok;
         }
 
-        private async Task<bool> TrySetSchedule(string cronExpression, IScheduler scheduler)
+        private async Task<bool> TrySetSchedule(string cronExpression, Quartz.IScheduler scheduler)
         {
             if (!CronExpression.IsValidExpression(cronExpression))
             {

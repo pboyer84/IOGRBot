@@ -7,15 +7,16 @@ using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    public class Bot
+    public class Bot : IBot
     {
         private readonly string commandListeningChannelName = "general";
         private readonly string announcementChannelName = "general";
         private readonly string iogrHighScoresChannelName = "highscores";
         private readonly string highscoreFilename = "highscores.txt";
 
+        private readonly BotConfiguration botConfiguration;
         private readonly DiscordSocketClient client;
-        private readonly Scheduler scheduler;
+        private readonly IScheduler scheduler;
         private HighScore currentScore;
         private ITextChannel announcementChannel;
         private ITextChannel commandListeningChannel;
@@ -30,10 +31,11 @@ namespace IOGRBot
     !newseed: new IOGR permalink
     !sleep: (admin only) terminates my program execution";
 
-        public Bot(Scheduler scheduler)
+        public Bot(IScheduler scheduler, BotConfiguration botConfiguration)
         {
             iogrFetcher = new IOGRFetcher();
             this.scheduler = scheduler;
+            this.botConfiguration = botConfiguration;
 
             client = new DiscordSocketClient();
 
@@ -71,7 +73,7 @@ namespace IOGRBot
             await client.LogoutAsync();
         }
 
-        
+
 
         public async Task PostAnnouncement(string message)
         {
@@ -140,7 +142,7 @@ namespace IOGRBot
                 return;
             }
 
-                if (message.Author.Username == "Inno" && message.Content == "!sleep")
+            if (message.Author.Username == "Inno" && message.Content == "!sleep")
             {
                 await message.Channel.SendMessageAsync("Goodnight!");
                 return;
@@ -176,12 +178,12 @@ namespace IOGRBot
         {
             bool overwrite = false;
             if (switches?.Length > 0)
-            { 
-                for (int i=0;i<switches.Length; i++)
+            {
+                for (int i = 0; i < switches.Length; i++)
                 {
                     switch (switches[i])
                     {
-                        case "-o": 
+                        case "-o":
                             overwrite = true;
                             break;
                         default:
@@ -190,7 +192,7 @@ namespace IOGRBot
                     }
                 }
             }
-            
+
             var result = currentScore.TryAdd(user.Username, time, overwrite);
 
             switch (result)

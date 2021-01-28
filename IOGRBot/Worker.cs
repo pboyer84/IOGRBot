@@ -8,18 +8,17 @@ namespace IOGRBot
 {
     public class Worker : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
-
-        public Worker(ILogger<Worker> logger)
+        private readonly ILogger<Worker> logger;
+        private readonly IBot bot;
+        public Worker(ILogger<Worker> logger, IBot bot)
         {
-            _logger = logger;
+            this.logger = logger;
+            this.bot = bot;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            var scheduler = new Scheduler();
-            var bot = new Bot(scheduler);
+            logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
             // TODO Get this value from a secret vault
             string loginToken = string.Empty;
             await bot.StartAsync(loginToken);
