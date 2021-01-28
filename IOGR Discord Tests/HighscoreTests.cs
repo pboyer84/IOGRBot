@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace IOGR_Discord_Tests
 {
-    public class Tests
+    public class HighScoreTests
     {
         [SetUp]
         public void Setup()

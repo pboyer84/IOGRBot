@@ -1,3 +1,5 @@
+using Discord;
+using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -21,13 +23,16 @@ namespace IOGRBot
                 {
                     IConfiguration configuration = hostContext.Configuration;
                     var botConfig = configuration.GetSection("DiscordBot").Get<BotConfiguration>();
+                    services.AddSingleton(botConfig);
+                    
+                    var discordClient = new DiscordSocketClient();
+                    services.AddSingleton(discordClient);
+                    
                     services.AddSingleton<IScheduler, Scheduler>();
                     services.AddSingleton<IBot, Bot>();
-                    services.AddSingleton(botConfig);
-
+                    services.AddSingleton<IIOGRFetcher, IOGRFetcher>();
                     
                     services.AddHostedService<Worker>();
-                    
                 });
     }
 }

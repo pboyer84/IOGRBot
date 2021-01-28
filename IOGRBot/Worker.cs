@@ -19,10 +19,7 @@ namespace IOGRBot
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            // TODO Get this value from a secret vault
-            string loginToken = string.Empty;
-            await bot.StartAsync(loginToken);
-
+            await bot.StartAsync();
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(1000);

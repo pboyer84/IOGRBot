@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    public class IOGRFetcher
+    public class IOGRFetcher : IIOGRFetcher
     {
         private Random rng = new Random();
 

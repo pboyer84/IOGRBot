@@ -9,10 +9,13 @@ namespace IOGRBot
 {
     public class Bot : IBot
     {
-        private readonly string commandListeningChannelName = "general";
-        private readonly string announcementChannelName = "general";
-        private readonly string iogrHighScoresChannelName = "highscores";
-        private readonly string highscoreFilename = "highscores.txt";
+        private string adminUsername;
+        private string commandListeningChannelName;
+        private string announcementChannelName;
+        private string iogrHighScoresChannelName;
+        private string highscoreFilename;
+        private string loginToken;
+        
 
         private readonly BotConfiguration botConfiguration;
         private readonly DiscordSocketClient client;
@@ -22,7 +25,7 @@ namespace IOGRBot
         private ITextChannel commandListeningChannel;
         private ITextChannel highScoresChannel;
         private bool ready = false;
-        private IOGRFetcher iogrFetcher;
+        private IIOGRFetcher iogrFetcher;
         private const string helpText =
 
  @"I only understand the following commands:
@@ -31,19 +34,57 @@ namespace IOGRBot
     !newseed: new IOGR permalink
     !sleep: (admin only) terminates my program execution";
 
-        public Bot(IScheduler scheduler, BotConfiguration botConfiguration)
+        public Bot(DiscordSocketClient client, IIOGRFetcher iogrFetcher, IScheduler scheduler, BotConfiguration botConfiguration)
         {
-            iogrFetcher = new IOGRFetcher();
+            this.iogrFetcher = iogrFetcher;
             this.scheduler = scheduler;
             this.botConfiguration = botConfiguration;
 
-            client = new DiscordSocketClient();
-
-            client.Log += LogAsync;
-            client.Ready += ReadyAsync;
-            client.LoggedOut += LoggedOutAsync;
-            client.MessageReceived += MessageReceivedAsync;
+            Configure(botConfiguration);
+            this.client = client;
+            this.client.Log += LogAsync;
+            this.client.Ready += ReadyAsync;
+            this.client.LoggedOut += LoggedOutAsync;
+            this.client.MessageReceived += MessageReceivedAsync;
         }
+
+        private void Configure(BotConfiguration config)
+        {
+            if (string.IsNullOrWhiteSpace(config?.AdminUsername))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.AdminUsername)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.AnnouncementChannel))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.AnnouncementChannel)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.CommandListeningChannel))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.CommandListeningChannel)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.HighScoreChannel))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.HighScoreChannel)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.HighScoreFilename))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.HighScoreFilename)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.LoginToken))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.LoginToken)}. Cannot start application.");
+            }
+            if (string.IsNullOrWhiteSpace(config?.RecurringSeedCronSchedule))
+            {
+                throw new ArgumentException($"Missing configuration value: {nameof(config.RecurringSeedCronSchedule)}. Cannot start application.");
+            }
+
+            announcementChannelName = config.AnnouncementChannel;
+            commandListeningChannelName = config.CommandListeningChannel;
+            iogrHighScoresChannelName = config.HighScoreChannel;
+            highscoreFilename = config.HighScoreFilename;
+            loginToken = config.LoginToken;
+    }
 
         private async Task LoggedOutAsync()
         {
@@ -54,9 +95,9 @@ namespace IOGRBot
             }
         }
 
-        public async Task StartAsync(string loginToken)
+        public async Task StartAsync()
         {
-            if (await scheduler.TryInitWithSchedule(this, @"0 0 12 ? * FRI *"))
+            if (await scheduler.TryInitWithSchedule(this, botConfiguration.RecurringSeedCronSchedule))
             {
                 await scheduler.Start();
             }
@@ -73,8 +114,6 @@ namespace IOGRBot
             await client.LogoutAsync();
         }
 
-
-
         public async Task PostAnnouncement(string message)
         {
             if (ready)
@@ -85,7 +124,7 @@ namespace IOGRBot
 
         private async Task InitHighScore()
         {
-            if (File.Exists(highscoreFilename))
+            if (File.Exists(botConfiguration.HighScoreFilename))
             {
                 currentScore = await HighScore.CreateInstanceFromFileAsync(highscoreFilename);
             }
@@ -135,14 +174,14 @@ namespace IOGRBot
                 return;
             }
 
-            if (message.Author.Username == "Inno" && message.Content == "!reset")
+            if (message.Author.Username == adminUsername && message.Content == "!reset")
             {
                 currentScore.Reset();
                 await message.Author.SendMessageAsync("Scores have been reset");
                 return;
             }
 
-            if (message.Author.Username == "Inno" && message.Content == "!sleep")
+            if (message.Author.Username == adminUsername && message.Content == "!sleep")
             {
                 await message.Channel.SendMessageAsync("Goodnight!");
                 return;

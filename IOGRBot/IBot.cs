@@ -6,6 +6,6 @@ namespace IOGRBot
     {
         Task PostAnnouncement(string message);
         Task ShutdownAsync();
-        Task StartAsync(string loginToken);
+        Task StartAsync();
     }
 }
