@@ -3,21 +3,21 @@ using Discord.WebSocket;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    public class Bot : IBot
+    public class Bot : BaseConfigurableObject, IBot
     {
         private string adminUsername;
-        private string commandListeningChannelName;
         private string announcementChannelName;
+        private string commandListeningChannelName;
         private string iogrHighScoresChannelName;
-        private string highscoreFilename;
+        private string highScoreFilename;
         private string loginToken;
-        
+        private string recurringSeedCronSchedule;
 
-        private readonly BotConfiguration botConfiguration;
         private readonly DiscordSocketClient client;
         private readonly IScheduler scheduler;
         private HighScore currentScore;
@@ -34,11 +34,10 @@ namespace IOGRBot
     !newseed: new IOGR permalink
     !sleep: (admin only) terminates my program execution";
 
-        public Bot(DiscordSocketClient client, IIOGRFetcher iogrFetcher, IScheduler scheduler, BotConfiguration botConfiguration)
+        public Bot(DiscordSocketClient client, IIOGRFetcher iogrFetcher, IScheduler scheduler, BotConfiguration botConfiguration) : base(botConfiguration)
         {
             this.iogrFetcher = iogrFetcher;
             this.scheduler = scheduler;
-            this.botConfiguration = botConfiguration;
 
             Configure(botConfiguration);
             this.client = client;
@@ -50,55 +49,27 @@ namespace IOGRBot
 
         private void Configure(BotConfiguration config)
         {
-            if (string.IsNullOrWhiteSpace(config?.AdminUsername))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.AdminUsername)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.AnnouncementChannel))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.AnnouncementChannel)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.CommandListeningChannel))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.CommandListeningChannel)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.HighScoreChannel))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.HighScoreChannel)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.HighScoreFilename))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.HighScoreFilename)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.LoginToken))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.LoginToken)}. Cannot start application.");
-            }
-            if (string.IsNullOrWhiteSpace(config?.RecurringSeedCronSchedule))
-            {
-                throw new ArgumentException($"Missing configuration value: {nameof(config.RecurringSeedCronSchedule)}. Cannot start application.");
-            }
-
             adminUsername = config.AdminUsername;
             announcementChannelName = config.AnnouncementChannel;
             commandListeningChannelName = config.CommandListeningChannel;
             iogrHighScoresChannelName = config.HighScoreChannel;
-            highscoreFilename = config.HighScoreFilename;
+            highScoreFilename = config.HighScoreFilename;
             loginToken = config.LoginToken;
-    }
+            recurringSeedCronSchedule = config.RecurringSeedCronSchedule;
+        }
 
         private async Task LoggedOutAsync()
         {
             ready = false;
             if (currentScore != null)
             {
-                await currentScore.SaveToFileAsync(highscoreFilename);
+                await currentScore.SaveToFileAsync(highScoreFilename);
             }
         }
 
         public async Task StartAsync()
         {
-            if (await scheduler.TryInitWithSchedule(this, botConfiguration.RecurringSeedCronSchedule))
+            if (await scheduler.TryInitWithSchedule(this, recurringSeedCronSchedule))
             {
                 await scheduler.Start();
             }
@@ -125,9 +96,9 @@ namespace IOGRBot
 
         private async Task InitHighScore()
         {
-            if (File.Exists(botConfiguration.HighScoreFilename))
+            if (File.Exists(highScoreFilename))
             {
-                currentScore = await HighScore.CreateInstanceFromFileAsync(highscoreFilename);
+                currentScore = await HighScore.CreateInstanceFromFileAsync(highScoreFilename);
             }
             else
             {

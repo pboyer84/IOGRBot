@@ -7,9 +7,25 @@ using System.Threading.Tasks;
 
 namespace IOGRBot
 {
-    public class IOGRFetcher : IIOGRFetcher
+    public class IOGRFetcher : BaseConfigurableObject, IIOGRFetcher
     {
         private Random rng = new Random();
+        private readonly HttpClient httpClient;
+        private string inputJsonFile;
+        private string iogrApiGenerateEndpoint;
+        private string iogrAppPermalinkBaseUrl;
+        public IOGRFetcher(HttpClient httpClient, IOGRFetcherConfiguration iOGRFetcherConfiguration) : base(iOGRFetcherConfiguration)
+        {
+            this.httpClient = httpClient;
+            Configure(iOGRFetcherConfiguration);
+        }
+
+        private void Configure(IOGRFetcherConfiguration iOGRFetcherConfiguration)
+        {
+            inputJsonFile = iOGRFetcherConfiguration.InputJsonFile;
+            iogrApiGenerateEndpoint = iOGRFetcherConfiguration.IogrApiGenerateEndpoint;
+            
+        }
 
         private int GenerateSeed()
         {
@@ -20,24 +36,22 @@ namespace IOGRBot
         }
 
         public async Task<string> GetNewSeedPermalink()
-        {
-            var client = new HttpClient();
-            string baseUrl = @"https://iogr-api-prod.azurewebsites.net/v1/seed/generate";
-            string input = File.ReadAllText("iogr.json");
+        {;
+            string input = File.ReadAllText(inputJsonFile);
             JObject i = JObject.Parse(input);
             var seedProperty = i.Property("seed");
             seedProperty.Value = GenerateSeed();
             input = i.ToString(Newtonsoft.Json.Formatting.None);
 
-            HttpContent f = new StringContent(input, Encoding.UTF8, "application/json");
+            HttpContent body = new StringContent(input, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync(baseUrl, f);
+            var response = await httpClient.PostAsync(iogrApiGenerateEndpoint, body);
             var data = await response?.Content?.ReadAsStringAsync();
 
             JObject o = JObject.Parse(data);
             var permalinkProperty = o.Property("permalink_id");
 
-            return $"https://www.iogr.app/permalink/{permalinkProperty.Value}";
+            return $"{iogrAppPermalinkBaseUrl}{permalinkProperty.Value}";
         }
     }
 }

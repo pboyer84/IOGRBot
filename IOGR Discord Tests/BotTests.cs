@@ -9,8 +9,8 @@ namespace IOGR_Discord_Tests
     public class BotTests
     {
         private Mock<DiscordSocketClient> mockDiscordClient = new Mock<DiscordSocketClient>();
-        private Mock<IOGRFetcher> mockIogrClient = new Mock<IOGRFetcher>();
-        private Mock<Scheduler> mockScheduler = new Mock<Scheduler>();
+        private Mock<IIOGRFetcher> mockIogrClient = new Mock<IIOGRFetcher>();
+        private Mock<IScheduler> mockScheduler = new Mock<IScheduler>();
 
         [SetUp]
         public void Setup()
@@ -21,7 +21,7 @@ namespace IOGR_Discord_Tests
         public void TestMissingConfigThrowsException()
         {
             var ex = Assert.Throws<ArgumentException>(() => CallFailingConstructor(null));
-            Assert.AreEqual(ex.Message, "Missing configuration value: AdminUsername. Cannot start application.");
+            Assert.AreEqual(ex.Message, $"Missing object configuration for type {typeof(Bot)}. Cannot start application.");
         }
 
         [Test]

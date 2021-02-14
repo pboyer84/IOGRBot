@@ -24,14 +24,18 @@ namespace IOGRBot
                     IConfiguration configuration = hostContext.Configuration;
                     var botConfig = configuration.GetSection("DiscordBot").Get<BotConfiguration>();
                     services.AddSingleton(botConfig);
-                    
+                    var iogrfetcherConfig = configuration.GetSection("IogrApp").Get<IOGRFetcherConfiguration>();
+                    services.AddSingleton(iogrfetcherConfig);
+
                     var discordClient = new DiscordSocketClient();
                     services.AddSingleton(discordClient);
                     
                     services.AddSingleton<IScheduler, Scheduler>();
                     services.AddSingleton<IBot, Bot>();
                     services.AddSingleton<IIOGRFetcher, IOGRFetcher>();
-                    
+                    services.AddSingleton<IPostWeeklySeedJob, PostWeeklySeedJob>();
+
+                    services.AddHttpClient<IIOGRFetcher, IOGRFetcher>();
                     services.AddHostedService<Worker>();
                 });
     }
