@@ -173,7 +173,7 @@ namespace IOGRBot
                         await DoSubmit(message.Author, time, switches);
                         await message.DeleteAsync();
                         break;
-                    case "!newsfeed":
+                    case "!newseed":
                         var permalink = await iogrFetcher.GetNewSeedPermalink();
                         await message.Channel.SendMessageAsync(permalink);
                         break;

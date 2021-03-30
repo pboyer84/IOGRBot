@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace IOGRBot
 {
@@ -24,7 +24,7 @@ namespace IOGRBot
         {
             inputJsonFile = iOGRFetcherConfiguration.InputJsonFile;
             iogrApiGenerateEndpoint = iOGRFetcherConfiguration.IogrApiGenerateEndpoint;
-            
+            iogrAppPermalinkBaseUrl = iOGRFetcherConfiguration.IogrAppPermalinkBaseUrl;
         }
 
         private int GenerateSeed()
@@ -36,22 +36,20 @@ namespace IOGRBot
         }
 
         public async Task<string> GetNewSeedPermalink()
-        {;
+        {
             string input = File.ReadAllText(inputJsonFile);
-            JObject i = JObject.Parse(input);
-            var seedProperty = i.Property("seed");
-            seedProperty.Value = GenerateSeed();
-            input = i.ToString(Newtonsoft.Json.Formatting.None);
+            var randomizerFlags = JsonSerializer.Deserialize<RandomizerFlags>(input);
+            randomizerFlags.seed = GenerateSeed();
 
-            HttpContent body = new StringContent(input, Encoding.UTF8, "application/json");
+            string bodyContent = JsonSerializer.Serialize<RandomizerFlags>(randomizerFlags);
+            HttpContent body = new StringContent(bodyContent, Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(iogrApiGenerateEndpoint, body);
-            var data = await response?.Content?.ReadAsStringAsync();
+            var responseContent = await response?.Content?.ReadAsStringAsync();
 
-            JObject o = JObject.Parse(data);
-            var permalinkProperty = o.Property("permalink_id");
+            var info = JsonSerializer.Deserialize<RandomizationInfo>(responseContent);
 
-            return $"{iogrAppPermalinkBaseUrl}{permalinkProperty.Value}";
+            return $"{iogrAppPermalinkBaseUrl}{info.permalink_id}";
         }
     }
 }
